@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intelligence WatchDog</title>
+<meta name="description" content="An operations copilot that finds why a KPI is slipping, values the fix, and acts on it under human approval, with every number computed by code.">
+<meta property="og:title" content="Intelligence WatchDog">
+<meta property="og:description" content="An evaluated operations copilot: code computes every number, the model reasons over evidence. 100% of planted causes found, 0 decoys accepted.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbfaf7; --surface:#ffffff; --ink:#1b1d21; --muted:#5b6170; --line:#e3e1db;
+  --accent:#1f6f5c; --accent-soft:rgba(31,111,92,.10); --tint:#f1efe9; --code:#f1efe9;
+  --diagram-edge:#8b909c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --surface:#191c20; --ink:#e8e9ec; --muted:#9aa1ad; --line:#2a2e35;
+    --accent:#5cc3a6; --accent-soft:rgba(92,195,166,.14); --tint:#1f2328; --code:#1f2328;
+    --diagram-edge:#6c7280;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --surface:#191c20; --ink:#e8e9ec; --muted:#9aa1ad; --line:#2a2e35;
+  --accent:#5cc3a6; --accent-soft:rgba(92,195,166,.14); --tint:#1f2328; --code:#1f2328;
+  --diagram-edge:#6c7280;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+a{color:var(--accent)}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;line-height:1.2;letter-spacing:-.01em}
+h1{font-size:clamp(2.1rem,6vw,3rem);margin:0 0 .4em}
+h2{font-size:1.75rem;margin:3.2rem 0 .6rem;padding-top:.4rem}
+h3{font-size:1.25rem;margin:2rem 0 .4rem}
+p{margin:.7em 0}
+.lead{font-size:1.06rem}
+header.hero{padding:4.5rem 0 2rem;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem}
+.tagline{font-size:1.2rem;color:var(--muted);margin:0 0 1.6rem;max-width:640px}
+.byline{font-size:.88rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:2rem 0 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 14px 12px}
+.stat b{display:block;font-size:1.6rem;font-weight:700;line-height:1.1;color:var(--accent)}
+.stat span{font-size:.8rem;color:var(--muted);line-height:1.35;display:block;margin-top:4px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+nav.toc{margin:2rem 0 0;font-size:.9rem}
+nav.toc ol{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px 8px}
+nav.toc a{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--muted);background:var(--surface)}
+nav.toc a:hover{color:var(--accent);border-color:var(--accent)}
+ul,ol{padding-left:1.25rem}
+li{margin:.35em 0}
+.callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.callout p{margin:.3em 0}
+.table-scroll{overflow-x:auto;margin:1rem 0 1.4rem;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;line-height:1.45}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:600;font-size:.78rem;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);background:var(--tint)}
+tr:last-child td{border-bottom:0}
+td.id{font-weight:600;white-space:nowrap;color:var(--accent)}
+td.num{white-space:nowrap}
+.note{font-size:.88rem;color:var(--muted)}
+figure{margin:1.6rem 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px}
+.svg-scroll{overflow-x:auto}
+.svg-scroll svg{display:block;width:100%;min-width:620px;height:auto}
+figcaption{font-size:.84rem;color:var(--muted);padding:6px 10px 4px}
+svg .ink{fill:var(--ink)} svg .quiet{fill:var(--muted)}
+svg .box{fill:none;stroke:var(--diagram-edge);stroke-width:1.25}
+svg .box.main{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+svg .band{fill:var(--tint);stroke:var(--diagram-edge);stroke-width:1.25}
+svg .edge{fill:none;stroke:var(--diagram-edge);stroke-width:1.25}
+svg .arrowhead{fill:var(--diagram-edge)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1rem 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card h4{margin:0 0 .3rem;font-size:.98rem}
+.card p{margin:0;font-size:.9rem;color:var(--muted)}
+@media (max-width:640px){.cards{grid-template-columns:1fr}}
+.timeline{list-style:none;padding:0;margin:1rem 0;border-left:2px solid var(--line)}
+.timeline li{position:relative;padding:0 0 1rem 1.2rem;margin:0}
+.timeline li::before{content:"";position:absolute;left:-7px;top:.45em;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.timeline .when{font-size:.8rem;color:var(--muted)}
+.timeline .what{font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:var(--code);padding:1px 5px;border-radius:4px}
+footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font-size:.86rem;color:var(--muted)}
+.theme-toggle{position:fixed;top:12px;right:12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;font:500 .8rem Inter,system-ui,sans-serif;cursor:pointer}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">Theme</button>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Case study · Agentic AI · Process intelligence</div>
+  <h1>Intelligence WatchDog</h1>
+  <p class="tagline">An operations copilot that finds why a KPI is slipping, values the fix, and acts on it under human approval, with every number traceable to code.</p>
+  <div class="byline">By Aqueel · Last updated November 2026</div>
+  <div class="stats">
+    <div class="stat"><b>100%</b><span>of planted root causes found in every completed run</span></div>
+    <div class="stat"><b>0</b><span>decoys accepted, across one local and three cloud models</span></div>
+    <div class="stat"><b>2</b><span>business processes on one engine</span></div>
+    <div class="stat"><b>₹0</b><span>spend: free model tiers, local embeddings</span></div>
+  </div>
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#scenarios">Two scenarios</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#decisions">Design decisions</a></li>
+      <li><a href="#build">Build story</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+  </nav>
+</header>
+
+<main>
+<section id="overview">
+  <h2>Overview</h2>
+  <p class="lead"><strong>The problem.</strong> Operations leaders run on KPIs such as claim turnaround or invoice-to-pay time. When a KPI slips, finding the cause takes analysts days of slicing data. A language model asked "why" will produce a fluent answer with invented numbers and plausible but wrong causes.</p>
+  <p><strong>The approach.</strong> WatchDog keeps the model for what it is good at (forming hypotheses, reading evidence, writing) and leaves every calculation to code.</p>
+  <p><strong>Who it is for.</strong> Operations and process-excellence leaders, and the consultants who serve them.</p>
+  <p><strong>Why the results can be trusted.</strong></p>
+  <ul>
+    <li>Synthetic data with planted root causes and decoys, so "did it find the real causes, and did it fall for the decoys?" is a measured number.</li>
+    <li>Two different processes (insurance claims, procure-to-pay) on one engine, which shows the engine is horizontal.</li>
+    <li>Governance in the backend: agents can propose and execute, never approve; every step lands in a tamper-evident audit log.</li>
+    <li>Zero spend: free model tiers, local embeddings, local-first deployment.</li>
+  </ul>
+</section>
+
+<section id="how">
+  <h2>How it works</h2>
+  <p>WatchDog closes the loop from a KPI alert to a verified fix. The investigation stage is where it differs from a dashboard or a chatbot.</p>
+  <figure>
+    <div class="svg-scroll">
+    <svg viewBox="0 0 760 202" role="img" aria-label="Each alert runs the full loop, and a follow-up metric checks the fix" font-size="13" font-family="Inter, system-ui, sans-serif">
+      <defs><marker id="loop-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      <text x="24" y="30" font-size="15" font-weight="600" class="ink">Each alert runs the full loop, and a follow-up metric checks the fix</text>
+      <g class="edge">
+        <path d="M184 100H208" marker-end="url(#loop-arrow)"/>
+        <path d="M368 100H392" marker-end="url(#loop-arrow)"/>
+        <path d="M552 100H576" marker-end="url(#loop-arrow)"/>
+        <path d="M656 144V186H104V144" marker-end="url(#loop-arrow)"/>
+      </g>
+      <rect x="24" y="56" width="160" height="88" rx="8" class="box"/>
+      <text x="36" y="80" font-size="15" font-weight="600" class="ink">Watch</text>
+      <text x="36" y="100" font-size="11.5" class="quiet">KPI monitors with</text>
+      <text x="36" y="116" font-size="11.5" class="quiet">policy thresholds</text>
+      <text x="36" y="132" font-size="11.5" class="quiet">open and triage alerts</text>
+      <rect x="208" y="56" width="160" height="88" rx="8" class="box main"/>
+      <text x="220" y="80" font-size="15" font-weight="600" class="ink">Investigate</text>
+      <text x="220" y="100" font-size="11.5" class="ink">hypotheses tested</text>
+      <text x="220" y="116" font-size="11.5" class="ink">with statistics and</text>
+      <text x="220" y="132" font-size="11.5" class="ink">confounder checks</text>
+      <rect x="392" y="56" width="160" height="88" rx="8" class="box"/>
+      <text x="404" y="80" font-size="15" font-weight="600" class="ink">Recommend</text>
+      <text x="404" y="100" font-size="11.5" class="quiet">catalogue actions</text>
+      <text x="404" y="116" font-size="11.5" class="quiet">valued by a what-if</text>
+      <text x="404" y="132" font-size="11.5" class="quiet">on the event log</text>
+      <rect x="576" y="56" width="160" height="88" rx="8" class="box"/>
+      <text x="588" y="80" font-size="15" font-weight="600" class="ink">Act</text>
+      <text x="588" y="100" font-size="11.5" class="quiet">human approval,</text>
+      <text x="588" y="116" font-size="11.5" class="quiet">executed via MCP,</text>
+      <text x="588" y="132" font-size="11.5" class="quiet">hash-chained audit</text>
+      <text x="380" y="178" text-anchor="middle" font-size="11.5" class="quiet">follow-up metric: did the executed action move the KPI?</text>
+    </svg>
+    </div>
+    <figcaption>The product loop: four stages and the follow-up check.</figcaption>
+  </figure>
+  <ul>
+    <li><strong>Watch.</strong> Monitors are configuration, with thresholds taken from the client's own policies ("critical if above 24 hours for two consecutive months"). New critical alerts are ranked and the top one is investigated automatically, within a daily budget.</li>
+    <li><strong>Investigate.</strong> A LangGraph workflow. Code scans the data for every significant pattern. The model turns patterns into hypotheses and picks checks from a fixed menu. Code runs every check, including confounder controls. The model judges each hypothesis, and rule overrides correct it in both directions. The executive summary's numbers are verified against the computed facts.</li>
+    <li><strong>Recommend.</strong> Each corrective action in the catalogue names the policy clause that permits it and a lever. A deterministic what-if on the event log values it (breaches avoided, illustrative annual ROI).</li>
+    <li><strong>Act.</strong> Propose, then approval by a person with the right business role, then execution through the Operations MCP server against the system of record. Agents can never approve, and the proposer cannot approve their own request.</li>
+  </ul>
+  <h3>Around the loop: the platform an enterprise would ask for</h3>
+  <div class="cards">
+    <div class="card"><h4>Access control</h4><p>Two layers: a platform role (viewer, analyst, admin) and a business role per process.</p></div>
+    <div class="card"><h4>Observability</h4><p>Every LLM call and API request: latency, tokens, cache hits, free-tier quota per model, traces per investigation.</p></div>
+    <div class="card"><h4>Cost control</h4><p>Answer cache, replay of identical investigations, showcase runs anyone can watch, a light model tier, rate limits only on requests that spend tokens.</p></div>
+    <div class="card"><h4>Three MCP servers</h4><p>Analytics and Knowledge (read-only) and Operations (governed actions), so external agents get the app's numbers, not estimates.</p></div>
+    <div class="card"><h4>Exploratory SQL</h4><p>Read-only and sandboxed, labelled "not a verified metric".</p></div>
+    <div class="card"><h4>Policy Q&amp;A</h4><p>Answers with citations, re-checked by a cross-encoder.</p></div>
+  </div>
+</section>
+
+<section id="scenarios">
+  <h2>Two processes, one engine</h2>
+  <p>Both processes run on the same engine, each defined by a "domain pack" of configuration: 18,000 cases per pack over 18 months (April 2025 to September 2026), five planted root causes, and decoys that look like causes but are explained by something else. Both companies are fictional.</p>
+
+  <h3>Insurance claims · Kestrel General Insurance</h3>
+  <p>Motor and health reimbursement claims, a five-day turnaround SLA, 20 policy and SOP documents, and a post-closure customer survey. Breach rate 26%.</p>
+  <div class="table-scroll"><table>
+    <thead><tr><th>ID</th><th>Planted root cause</th><th>How it shows in the data</th></tr></thead>
+    <tbody>
+      <tr><td class="id">RC1</td><td>Senior-approval queue understaffed since the approval threshold dropped from ₹5L to ₹2L on 1 April 2026</td><td>Wait before Senior Approval steps up from about 15h to 70h and keeps rising</td></tr>
+      <tr><td class="id">RC2</td><td>Broker claims arrive without complete documents</td><td>Additional-documents loop on about 24% of broker claims vs 6%</td></tr>
+      <tr><td class="id">RC3</td><td>Team B's verification work is rejected by QA more often</td><td>Rework 17.5% for Team B vs 4.8%</td></tr>
+      <tr><td class="id">RC4</td><td>Work handed over late on Friday waits for the Monday backlog</td><td>Friday-afternoon handoffs wait about 53h</td></tr>
+      <tr><td class="id">RC5</td><td>Monsoon surveyor backlog: motor claims rise 60% in July to September and the surge panel was never activated</td><td>Survey wait triples in both monsoons (about 12h to 39h)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="table-scroll"><table>
+    <thead><tr><th>ID</th><th>Decoy (looks like)</th><th>Actually</th></tr></thead>
+    <tbody>
+      <tr><td class="id">DC1</td><td>Health claims are slower</td><td>Health claims are higher-value, so they hit the senior queue (RC1)</td></tr>
+      <tr><td class="id">DC2</td><td>Pune underperforms</td><td>Tiny and broker-heavy (RC2)</td></tr>
+      <tr><td class="id">DC3</td><td>Customers are broadly unhappy</td><td>Unhappy customers answer surveys more often</td></tr>
+      <tr><td class="id">DC4</td><td>Kolkata claims need more rework</td><td>Four in five Kolkata claims go to Team B (RC3)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Procure-to-pay · Varaha Auto Components</h3>
+  <p>Supplier invoices at a five-plant manufacturer, a ten-day invoice-to-pay target, 13 documents. Breach rate 34%.</p>
+  <div class="table-scroll"><table>
+    <thead><tr><th>ID</th><th>Planted root cause</th><th>How it shows in the data</th></tr></thead>
+    <tbody>
+      <tr><td class="id">RC1</td><td>Chakan's stores post goods receipts late (one clerk short)</td><td>Goods-receipt-pending rate 23% at Chakan vs 6%</td></tr>
+      <tr><td class="id">RC2</td><td>Free-text purchase orders have no agreed price</td><td>Price exceptions on about 54% of free-text invoices vs 5%</td></tr>
+      <tr><td class="id">RC3</td><td>The outsourced BPO Partner makes capture errors</td><td>Re-capture loop on 40% of BPO invoices vs 4%</td></tr>
+      <tr><td class="id">RC4</td><td>Treasury cut payment runs from twice to once a week from 1 July 2026</td><td>Wait before Payment Run rises from about 54h to 80h</td></tr>
+      <tr><td class="id">RC5</td><td>Paper invoices go by weekly courier to central scanning</td><td>Paper invoices breach 61% vs 27%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="table-scroll"><table>
+    <thead><tr><th>ID</th><th>Decoy (looks like)</th><th>Actually</th></tr></thead>
+    <tbody>
+      <tr><td class="id">DC1</td><td>IT and professional services are slow</td><td>They are mostly free-text POs (RC2)</td></tr>
+      <tr><td class="id">DC2</td><td>MSME suppliers are paid late</td><td>Their invoices mostly go to the BPO Partner (RC3)</td></tr>
+      <tr><td class="id">DC3</td><td>The Sanand plant pays late</td><td>Three in five Sanand invoices are on paper (RC5)</td></tr>
+    </tbody>
+  </table></div>
+  <p>The data also carries realistic seasonality (monsoon motor surge, March fiscal year-end rush) and change points that match the dated policy documents. Every case draws its randomness up front and is re-simulated with each cause switched off, so "this breach happened because of RC1" is an exact counterfactual, not an estimate.</p>
+</section>
+
+<section id="results">
+  <h2>Results</h2>
+  <div class="callout"><p>On the six-month datasets, every completed investigation found every planted cause and no run accepted a decoy, across one local and three cloud models. On the 18-month data, the first five runs (insurance questions, seed 42) did the same.</p></div>
+  <h3>Insurance claims · six-month data, 3 seeds × 3 questions per model</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Model</th><th>Completed</th><th>Recall of planted causes</th><th>Decoys accepted</th><th>Model's own citation accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>ollama:qwen2.5:7b (local, free)</td><td class="num">9/9</td><td>100%</td><td class="num">0</td><td class="num">75%</td></tr>
+      <tr><td>groq:openai/gpt-oss-120b</td><td class="num">9/9</td><td>100% (79% before the D37 fix)</td><td class="num">0</td><td class="num">73%</td></tr>
+      <tr><td>groq:openai/gpt-oss-20b</td><td class="num">8/9</td><td>100%</td><td class="num">0</td><td class="num">69%</td></tr>
+      <tr><td>groq:qwen/qwen3.8-27b</td><td class="num">4/9</td><td>100%</td><td class="num">0</td><td class="num">97%</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Incomplete runs were refused by Groq's free tier (quota or per-minute size cap), not model failures, and are reported separately.</p>
+  <p><strong>Procure-to-pay</strong> (six-month data, local 7B, 9 investigations): 100% recall, 0 decoys, remedy recommended for 17 of 18 causes, policy answers grounded 100%, retrieval hit@5 100%.</p>
+  <h3>Other evidence</h3>
+  <ul>
+    <li>Policy Q&amp;A: 96% to 100% of answers cite a relevant passage; citations are re-checked by a cross-encoder, not trusted.</li>
+    <li>Retrieval on the larger 18-month corpus (hybrid search): the right passage is in the top five for 97% (insurance) and 100% (procure-to-pay) of benchmark questions.</li>
+    <li>What-if estimates land at 0.5 to 0.99 of the exact counterfactual. The engine tends to understate, which is the safe direction.</li>
+    <li>Unverified numbers in executive summaries: 0 across all completed runs.</li>
+    <li>In one procure-to-pay evaluation the model called a confounded segment "supported" 25 times; the confounder rule refuted every one, so none reached the summary.</li>
+  </ul>
+  <h3>Limitations</h3>
+  <ul>
+    <li>The data is synthetic and the policies author-written. The results show the system recovers planted patterns and resists planted decoys, not that it would on a messy real event log.</li>
+    <li>Samples are small (three seeds, three to five questions per pack and model).</li>
+    <li>Number verification checks numbers, not claims: a small model can attach a correct number to the wrong statement.</li>
+    <li>The what-if engine understates some effects (calendar effects, mechanisms beyond waiting time).</li>
+    <li>The full evaluation on the 18-month data, with five causes per pack, is not yet complete; the results above are mainly from the six-month data.</li>
+  </ul>
+</section>
+
+<section id="architecture">
+  <h2>Architecture and stack</h2>
+  <p>A modular monolith with separate processes for the watcher and three MCP servers, all on one PostgreSQL database and driven by per-process configuration. The investigation graph is the product. Everything else makes it trustworthy (governance, audit, observability) or affordable (local embeddings, free model tiers, caching). A new process is a configuration pack, not new code.</p>
+  <figure>
+    <div class="svg-scroll">
+    <svg viewBox="0 0 760 526" role="img" aria-label="One engine, configured per process by a domain pack" font-size="13" font-family="Inter, system-ui, sans-serif">
+      <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+      <text x="24" y="30" font-size="15" font-weight="600" class="ink">One engine, configured per process by a domain pack</text>
+      <g class="edge">
+        <path d="M194 108V140" marker-end="url(#arch-arrow)"/>
+        <path d="M736 80H748V288H736" marker-end="url(#arch-arrow)"/>
+        <path d="M460 300H492" marker-end="url(#arch-arrow)"/>
+        <path d="M492 180H460" marker-end="url(#arch-arrow)"/>
+        <path d="M137 340V372" marker-end="url(#arch-arrow)"/>
+        <path d="M380 340V372" marker-end="url(#arch-arrow)"/>
+        <path d="M623 340V372" marker-end="url(#arch-arrow)"/>
+      </g>
+      <rect x="24" y="52" width="340" height="56" rx="8" class="box"/>
+      <text x="40" y="74" font-weight="600" class="ink">Web app</text>
+      <text x="40" y="94" font-size="11.5" class="quiet">React, Vite, TypeScript · 10 screens</text>
+      <rect x="396" y="52" width="340" height="56" rx="8" class="box"/>
+      <text x="412" y="74" font-weight="600" class="ink">External agents</text>
+      <text x="412" y="94" font-size="11.5" class="quiet">Claude or any MCP client</text>
+      <rect x="24" y="140" width="436" height="200" rx="8" class="box"/>
+      <text x="40" y="164" font-weight="600" class="ink">Backend (FastAPI, modular monolith)</text>
+      <rect x="40" y="180" width="194" height="40" rx="8" class="box main"/>
+      <text x="137" y="205" text-anchor="middle" font-weight="600" class="ink">Investigation graph</text>
+      <rect x="250" y="180" width="194" height="40" rx="8" class="box"/>
+      <text x="347" y="205" text-anchor="middle" class="ink">Metrics, process mining</text>
+      <rect x="40" y="232" width="194" height="40" rx="8" class="box"/>
+      <text x="137" y="257" text-anchor="middle" class="ink">Retrieval, citations</text>
+      <rect x="250" y="232" width="194" height="40" rx="8" class="box"/>
+      <text x="347" y="257" text-anchor="middle" class="ink">Governance, audit</text>
+      <rect x="40" y="284" width="194" height="40" rx="8" class="box"/>
+      <text x="137" y="309" text-anchor="middle" class="ink">Accounts, RBAC</text>
+      <rect x="250" y="284" width="194" height="40" rx="8" class="box"/>
+      <text x="347" y="309" text-anchor="middle" class="ink">Observability</text>
+      <rect x="492" y="140" width="244" height="80" rx="8" class="box"/>
+      <text x="508" y="164" font-weight="600" class="ink">Watcher</text>
+      <text x="508" y="184" font-size="11.5" class="quiet">scheduled KPI monitors</text>
+      <text x="508" y="200" font-size="11.5" class="quiet">automatic alert triage</text>
+      <rect x="492" y="236" width="244" height="104" rx="8" class="box"/>
+      <text x="508" y="260" font-weight="600" class="ink">MCP servers</text>
+      <text x="508" y="280" font-size="11.5" class="quiet">Analytics (read-only)</text>
+      <text x="508" y="296" font-size="11.5" class="quiet">Knowledge (read-only)</text>
+      <text x="508" y="312" font-size="11.5" class="quiet">Operations (governed actions)</text>
+      <rect x="24" y="372" width="226" height="72" rx="8" class="box"/>
+      <text x="40" y="396" font-weight="600" class="ink">PostgreSQL + pgvector</text>
+      <text x="40" y="414" font-size="11.5" class="quiet">7 schemas: data, knowledge,</text>
+      <text x="40" y="430" font-size="11.5" class="quiet">investigations, audit, users</text>
+      <rect x="267" y="372" width="226" height="72" rx="8" class="box"/>
+      <text x="283" y="396" font-weight="600" class="ink">LLM gateway</text>
+      <text x="283" y="414" font-size="11.5" class="quiet">Ollama (local), Groq, Gemini</text>
+      <text x="283" y="430" font-size="11.5" class="quiet">embeddings run locally (ONNX)</text>
+      <rect x="510" y="372" width="226" height="72" rx="8" class="box"/>
+      <text x="526" y="396" font-weight="600" class="ink">Mock enterprise API</text>
+      <text x="526" y="414" font-size="11.5" class="quiet">system of record that</text>
+      <text x="526" y="430" font-size="11.5" class="quiet">executed actions change</text>
+      <rect x="24" y="468" width="712" height="40" rx="8" class="band"/>
+      <text x="380" y="493" text-anchor="middle" class="ink">Domain packs: dimensions, metrics, monitors, actions, governance, documents, benchmark</text>
+    </svg>
+    </div>
+    <figcaption>System architecture: services as run in Docker Compose.</figcaption>
+  </figure>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Layer</th><th>Choice</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>Python, FastAPI, SQLAlchemy, Alembic (13 migrations), pytest (258 tests)</td></tr>
+      <tr><td>Agent workflow</td><td>LangGraph; structured output via JSON schema with a tool-calling fallback</td></tr>
+      <tr><td>Models</td><td>Provider-agnostic gateway: Ollama qwen2.5:7b locally, Groq free tier (gpt-oss-120b, gpt-oss-20b, qwen3.8-27b), Gemini optional</td></tr>
+      <tr><td>Retrieval</td><td>Hybrid vector + full-text with reciprocal rank fusion; BGE-small embeddings and a MiniLM cross-encoder via fastembed (ONNX, CPU)</td></tr>
+      <tr><td>Data</td><td>PostgreSQL 17 with pgvector; process mining in SQL (directly-follows graph, variants, waiting times)</td></tr>
+      <tr><td>Integration</td><td>MCP Python SDK, static bearer tokens per client, three servers</td></tr>
+      <tr><td>Frontend</td><td>React, Vite, TypeScript, Tailwind, TanStack Query</td></tr>
+      <tr><td>Runtime</td><td>Docker Compose locally; CI runs lint, migrations, tests, a migration round-trip and the frontend build</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="decisions">
+  <h2>Key design decisions</h2>
+  <p>The project's credibility rests on a handful of decisions. The full log of 54 decisions is kept in the repository.</p>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Decision</th><th>Why it matters to a buyer</th></tr></thead>
+    <tbody>
+      <tr><td>Code computes, the LLM reasons (D4, D22)</td><td>No invented KPIs: every number traces to SQL or a deterministic function.</td></tr>
+      <tr><td>Governed metrics layer, not free-form text-to-SQL (D5)</td><td>Metrics are signed-off definitions; exploratory SQL exists but is labelled and sandboxed (D51).</td></tr>
+      <tr><td>Planted causes and decoys (D6)</td><td>Quality becomes a number: recall of real causes and decoys accepted.</td></tr>
+      <tr><td>Hypothesis-driven investigation shown in the UI (D7)</td><td>Reviewers see hypotheses, evidence for and against, and verdicts, not a black box.</td></tr>
+      <tr><td>Rule overrides in both directions (D23, D37, D54)</td><td>A confounded effect cannot be "supported"; strong evidence cannot be suppressed by a timid model; a claim with no significant effect is downgraded.</td></tr>
+      <tr><td>Every number in the summary is verified (D26)</td><td>Figures not found in the computed facts are rewritten or flagged.</td></tr>
+      <tr><td>Approvals enforced in the backend; agents cannot approve (D9, D28)</td><td>The same rules apply to the web app, an agent, or an external MCP client.</td></tr>
+      <tr><td>Tamper-evident audit log (D29)</td><td>SHA-256 hash chain; edits, inserts or deletes are detected.</td></tr>
+      <tr><td>Provider-agnostic LLM gateway, free tiers (D3, D12)</td><td>Runs on a local 7B model or Groq; model choice is a measured cost/quality trade-off.</td></tr>
+      <tr><td>Process mining in SQL, not PM4Py (D17)</td><td>Avoids AGPL licensing and keeps the stack lean.</td></tr>
+      <tr><td>A new process is configuration (D40)</td><td>Domain packs hold dimensions, metrics, monitors, actions, governance and documents.</td></tr>
+      <tr><td>Replay instead of re-running; rate limits only on token spend (D48, D49)</td><td>A public demo survives free-tier limits.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="build">
+  <h2>Build story</h2>
+  <p>Nine milestones, each demoable on its own.</p>
+  <ol class="timeline">
+    <li><div class="what">M0–M3 · Foundations</div>Repo, Docker Compose, data generator, metrics layer, process mining, document retrieval with citations.</li>
+    <li><div class="what">M4 · Investigate</div>LangGraph investigation (plan, evidence, judge, recommend, summarise), what-if ROI.</li>
+    <li><div class="what">M5 · Act</div>Operations MCP server, approvals, audit log, mock enterprise API.</li>
+    <li><div class="what">M6 · Watch</div>KPI monitors with policy thresholds, alerts, alert to investigation, follow-up metrics.</li>
+    <li><div class="what">M7 · Evaluation</div>Ground-truth benchmark, retrieval metrics, multi-model comparison, evaluation report.</li>
+    <li><div class="what">M8 · Second pack</div>Procure-to-pay on the same engine; case study and demo script.</li>
+    <li><div class="what">M8 · Platform</div>Accounts and two-layer RBAC, built-in observability, policy-answer cache, light model tier, model comparison page; then investigation cache and showcase replay, rate limits, Analytics and Knowledge MCP servers, exploratory SQL, automatic alert triage.</li>
+    <li><div class="what">M8 · Richer data</div>18 months per pack, seasonality, change points, a fifth cause and a new decoy per pack, 10 new documents.</li>
+  </ol>
+  <h3>Problems found and fixed along the way</h3>
+  <ul>
+    <li><strong>Scoped investigations were blind to their own cause.</strong> Asking "why are broker claims breaching?" compared brokers only with brokers. Fix: scoped checks also compare with the rest of the business.</li>
+    <li><strong>Tool calling failed on two cloud models.</strong> JSON-schema output succeeded 3/3 where tool calls did not; it became the default, with a fallback.</li>
+    <li><strong>A slow model server stalled runs for minutes.</strong> Per-read timeouts reset with every token; every call now has a wall-clock deadline, and output tokens are capped.</li>
+    <li><strong>Over-caution cost recall.</strong> The 120B model left real causes inconclusive (79% recall). Code-worded upgrades with strict evidence criteria took it to 100% without ever accepting a decoy.</li>
+    <li><strong>The second pack exposed hidden assumptions.</strong> Most of the work of adding procure-to-pay was moving process constants out of code into configuration.</li>
+    <li><strong>Observability found bugs on day one.</strong> Parallel assessment lost its context; cache hits were never recorded.</li>
+    <li><strong>Automatic triage, run live, failed honestly.</strong> The watcher container could not reach the models; the alert recorded "failed" with the reason, and the fix took one compose change.</li>
+    <li><strong>Richer data stressed the engine.</strong> A queue's month-by-month signal was blurred by another change, decoy signals crowded out a real cause, and a hypothesis with no significant effect stayed "supported". Three generic rule fixes (D54) resolved all three.</li>
+  </ul>
+</section>
+
+<section id="roadmap">
+  <h2>Roadmap</h2>
+  <p>The remaining work turns a local project into a public demo with a live URL and a video. Each step depends on the one before it.</p>
+  <ol>
+    <li><strong>Complete the 18-month evaluation:</strong> local 7B model on both packs, three seeds, then rebuild the evaluation report.</li>
+    <li><strong>Re-record showcase runs</strong> on the new data, including the monsoon and Sanand questions, so visitors can replay investigations without spending model quota.</li>
+    <li><strong>Public deployment:</strong> HTTPS, production settings, a cloud model protected by the rate limits, and chosen showcase runs shipped with it.</li>
+    <li><strong>GitHub sign-in</strong> for visitors, defaulting to the read-only viewer role.</li>
+    <li><strong>Re-run the cloud models</strong> on the 18-month data, paced for free-tier limits.</li>
+    <li><strong>Demo video</strong> (about 4½ minutes) recorded against the live URL.</li>
+  </ol>
+  <p class="note">Deliberately out of scope: multi-tenancy, Kubernetes, streaming platforms, a third process pack.</p>
+</section>
+
+<section id="glossary">
+  <h2>Glossary</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Term</th><th>Plain meaning</th></tr></thead>
+    <tbody>
+      <tr><td>SLA breach rate</td><td>Share of cases that missed the promised turnaround</td></tr>
+      <tr><td>Root cause (planted)</td><td>A problem deliberately built into the test data, so the answer is known</td></tr>
+      <tr><td>Decoy</td><td>A pattern that looks like a cause but is explained by something else</td></tr>
+      <tr><td>Confounder</td><td>The hidden factor behind a misleading pattern (e.g. claim value behind "health is slower")</td></tr>
+      <tr><td>Recall</td><td>Share of the real causes the system found</td></tr>
+      <tr><td>MCP</td><td>Model Context Protocol: a standard way for AI agents to use tools and data</td></tr>
+      <tr><td>Process mining</td><td>Reconstructing how work actually flows from system event logs</td></tr>
+      <tr><td>What-if</td><td>Estimating how many breaches a fix would have avoided, from the event log</td></tr>
+    </tbody>
+  </table></div>
+</section>
+</main>
+
+<footer>
+  Intelligence WatchDog · a portfolio project by Aqueel. All companies, people and data in the scenarios are fictional.
+</footer>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeToggle');
+  function current(){var t=root.getAttribute('data-theme'); if(t) return t; return window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+  try{var saved=localStorage.getItem('theme'); if(saved) root.setAttribute('data-theme',saved);}catch(e){}
+  btn.textContent=current()==='dark'?'Light':'Dark';
+  btn.addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next); btn.textContent=next==='dark'?'Light':'Dark';
+    try{localStorage.setItem('theme',next);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
