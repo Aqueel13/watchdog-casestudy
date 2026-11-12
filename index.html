@@ -87,6 +87,12 @@ svg .arrowhead{fill:var(--diagram-edge)}
 .timeline .what{font-weight:600}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:var(--code);padding:1px 5px;border-radius:4px}
 footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font-size:.86rem;color:var(--muted)}
+.btn{display:inline-block;background:var(--accent);color:var(--bg);font-weight:600;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:.95rem}
+.btn:hover{filter:brightness(1.1)}
+.cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:1.4rem 0 0}
+.cta .url{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;color:var(--muted);overflow-wrap:anywhere}
+.badge{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-right:6px;vertical-align:1px}
+.badge.open{background:var(--tint);color:var(--muted)}
 .theme-toggle{position:fixed;top:12px;right:12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;font:500 .8rem Inter,system-ui,sans-serif;cursor:pointer}
 </style>
 </head>
@@ -99,6 +105,10 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
   <h1>Intelligence WatchDog</h1>
   <p class="tagline">An operations copilot that finds why a KPI is slipping, values the fix, and acts on it under human approval, with every number traceable to code.</p>
   <div class="byline">By Aqueel · Last updated November 2026</div>
+  <div class="cta">
+    <a class="btn" href="https://intelligence-watchdog.duckdns.org/" target="_blank" rel="noopener">Open the live demo</a>
+    <span class="url">intelligence-watchdog.duckdns.org</span>
+  </div>
   <div class="stats">
     <div class="stat"><b>100%</b><span>of planted root causes found in every completed run</span></div>
     <div class="stat"><b>0</b><span>decoys accepted, across one local and three cloud models</span></div>
@@ -108,10 +118,12 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
   <nav class="toc" aria-label="Contents">
     <ol>
       <li><a href="#overview">Overview</a></li>
+      <li><a href="#demo">Live demo</a></li>
       <li><a href="#how">How it works</a></li>
       <li><a href="#scenarios">Two scenarios</a></li>
       <li><a href="#results">Results</a></li>
       <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#deploy">Deployment</a></li>
       <li><a href="#decisions">Design decisions</a></li>
       <li><a href="#build">Build story</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
@@ -133,6 +145,20 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
     <li>Governance in the backend: agents can propose and execute, never approve; every step lands in a tamper-evident audit log.</li>
     <li>Zero spend: free model tiers, local embeddings, local-first deployment.</li>
   </ul>
+</section>
+
+<section id="demo">
+  <h2>Live demo</h2>
+  <p>WatchDog runs publicly at <a href="https://intelligence-watchdog.duckdns.org/" target="_blank" rel="noopener">intelligence-watchdog.duckdns.org</a>, live since 12 November 2026, on a free Oracle Cloud server and Groq's free model tier.</p>
+  <ul>
+    <li><strong>Browse without signing in.</strong> Visitors have read-only access (D58).</li>
+    <li><strong>Replay recorded investigations.</strong> Showcase runs are real investigations recorded ahead of time. Replaying one costs no model tokens.</li>
+    <li><strong>Run new investigations.</strong> Sign in with GitHub. Only accounts an admin created can sign in (D56, D61).</li>
+  </ul>
+  <div class="callout"><p><strong>Start with a replay.</strong> Fresh investigations draw on a free quota of about ten a day for everyone, so replays are the reliable way to see the system.</p></div>
+  <div class="cta">
+    <a class="btn" href="https://intelligence-watchdog.duckdns.org/" target="_blank" rel="noopener">Open the live demo</a>
+  </div>
 </section>
 
 <section id="how">
@@ -347,14 +373,29 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
       <tr><td>Data</td><td>PostgreSQL 17 with pgvector; process mining in SQL (directly-follows graph, variants, waiting times)</td></tr>
       <tr><td>Integration</td><td>MCP Python SDK, static bearer tokens per client, three servers</td></tr>
       <tr><td>Frontend</td><td>React, Vite, TypeScript, Tailwind, TanStack Query</td></tr>
-      <tr><td>Runtime</td><td>Docker Compose locally; CI runs lint, migrations, tests, a migration round-trip and the frontend build</td></tr>
+      <tr><td>Runtime</td><td>Docker Compose locally and in production, with Caddy for HTTPS; CI runs lint, migrations, tests, a migration round-trip and the frontend build</td></tr>
     </tbody>
   </table></div>
 </section>
 
+<section id="deploy">
+  <h2>Deployment</h2>
+  <p>The plan was Oracle's free 4-core ARM machine. It was out of capacity, so the demo runs on the free 1 GB AMD micro instance with 4 GB of swap (D60). The running stack uses about 0.5 GB of RAM, so responses are slower while parts of it page in from swap.</p>
+  <ul>
+    <li><strong>One public entry point.</strong> Caddy gets and renews the HTTPS certificate, adds security headers, serves the built frontend and forwards <code>/api/*</code> to the backend without buffering, so investigation events stream live. Postgres, the backend, the Operations MCP server and the mock enterprise API have no published ports.</li>
+    <li><strong>Builds happen off the server.</strong> Images are built on a laptop with the same CPU architecture and streamed to the server over SSH. The first transfer took under three minutes. Building on a one-eighth-core machine would take about an hour or run out of memory.</li>
+    <li><strong>Data is regenerated, not copied.</strong> The generators are deterministic, so the server rebuilds the identical 18-month datasets from seed 42 and ingests the 13 policy documents.</li>
+    <li><strong>Replays are checked.</strong> A showcase run loads only if a fingerprint of the server's data matches the data it was recorded on, so a replay cannot quote numbers that are not there. Runs are recorded locally on the free model (D59).</li>
+    <li><strong>Free-tier limits.</strong> Groq allows 8,000 tokens a minute and 200,000 a day per model (D62). Calls run one at a time with up to eight retries that wait as long as the provider asks. A test investigation hit 21 per-minute refusals and still finished in 176 seconds. The app allows 4 fresh investigations per person per hour and 12 a day overall.</li>
+    <li><strong>Security.</strong> Only ports 22, 80 and 443 are open. Sessions use a Secure, HttpOnly cookie with a hashed token and a 12-hour sliding expiry. GitHub sign-in asks for identity scopes only, uses the token for two API calls and discards it, and a state cookie blocks login CSRF.</li>
+    <li><strong>Resilience.</strong> Every service restarts automatically after a crash or reboot. Nightly database dumps keep the newest 14.</li>
+  </ul>
+  <p class="note">Known limits: about ten fresh investigations a day, slower responses than the planned ARM shape, and Oracle can reclaim free instances it considers idle. The hourly watcher keeps the server lightly busy.</p>
+</section>
+
 <section id="decisions">
   <h2>Key design decisions</h2>
-  <p>The project's credibility rests on a handful of decisions. The full log of 54 decisions is kept in the repository.</p>
+  <p>The project's credibility rests on a handful of decisions. The full decision log is kept in the repository.</p>
   <div class="table-scroll"><table>
     <thead><tr><th>Decision</th><th>Why it matters to a buyer</th></tr></thead>
     <tbody>
@@ -370,6 +411,13 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
       <tr><td>Process mining in SQL, not PM4Py (D17)</td><td>Avoids AGPL licensing and keeps the stack lean.</td></tr>
       <tr><td>A new process is configuration (D40)</td><td>Domain packs hold dimensions, metrics, monitors, actions, governance and documents.</td></tr>
       <tr><td>Replay instead of re-running; rate limits only on token spend (D48, D49)</td><td>A public demo survives free-tier limits.</td></tr>
+      <tr><td>Accounts are created by an admin (D56)</td><td>GitHub proves who you are; the app decides who gets in. There is no sign-up route.</td></tr>
+      <tr><td>Net benefit is annualised from the months since a change began (D57)</td><td>A fix is no longer judged on a partial year. The Tuesday payment run now shows about ₹22.7 lakh a year, where it was once called not cost-effective.</td></tr>
+      <tr><td>Visitors are read-only (D58)</td><td>Anyone can look around without an account.</td></tr>
+      <tr><td>Showcase runs are recorded locally (D59)</td><td>Replays cost nothing and never spend the cloud quota.</td></tr>
+      <tr><td>Run on the free micro server, build elsewhere (D60)</td><td>Zero budget, and the ARM server was unavailable.</td></tr>
+      <tr><td>GitHub sign-in, identity only (D61)</td><td>No passwords to store, and the app cannot see repositories.</td></tr>
+      <tr><td>One model call at a time in production (D62)</td><td>Slower, but investigations finish inside the free per-minute limit.</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -386,6 +434,7 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
     <li><div class="what">M8 · Second pack</div>Procure-to-pay on the same engine; case study and demo script.</li>
     <li><div class="what">M8 · Platform</div>Accounts and two-layer RBAC, built-in observability, policy-answer cache, light model tier, model comparison page; then investigation cache and showcase replay, rate limits, Analytics and Knowledge MCP servers, exploratory SQL, automatic alert triage.</li>
     <li><div class="what">M8 · Richer data</div>18 months per pack, seasonality, change points, a fifth cause and a new decoy per pack, 10 new documents.</li>
+    <li><div class="what">M8 · Deployment</div>Public HTTPS deployment on a free Oracle instance, GitHub sign-in, showcase runs re-recorded on the new data, free-tier pacing for the cloud models.</li>
   </ol>
   <h3>Problems found and fixed along the way</h3>
   <ul>
@@ -397,19 +446,25 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
     <li><strong>Observability found bugs on day one.</strong> Parallel assessment lost its context; cache hits were never recorded.</li>
     <li><strong>Automatic triage, run live, failed honestly.</strong> The watcher container could not reach the models; the alert recorded "failed" with the reason, and the fix took one compose change.</li>
     <li><strong>Richer data stressed the engine.</strong> A queue's month-by-month signal was blurred by another change, decoy signals crowded out a real cause, and a hypothesis with no significant effect stayed "supported". Three generic rule fixes (D54) resolved all three.</li>
+    <li><strong>The free ARM server was not available.</strong> Oracle's free Ampere capacity is shared and often exhausted. The demo moved to the 1 GB micro and the build moved off the server (D60).</li>
+    <li><strong>Port 80 timed out.</strong> The subnet's security list had no ingress rule for 80 and 443. A timeout means a silently dropped packet, while "No route to host" means the server's own firewall refused it, so the two point at different layers.</li>
+    <li><strong>A healthy app failed its health check.</strong> Six containers booting on an eighth of a core pushed the check past its 3-second timeout, and Caddy waits for a healthy backend. A 20-second timeout and a 3-minute start period fixed it.</li>
+    <li><strong>Parallel model calls hit the per-minute token limit.</strong> Four simultaneous calls used a minute's allowance at once. One call at a time with more retries finishes reliably (D62).</li>
+    <li><strong>A day's token quota was spent before launch.</strong> Re-recording showcase runs on Groq burned it. They are now recorded locally, as D59 intended.</li>
+    <li><strong>GitHub sign-in looked broken.</strong> The flow worked, but the accounts table was empty until the seed ran, and the app refuses unknown GitHub users by design.</li>
   </ul>
 </section>
 
 <section id="roadmap">
   <h2>Roadmap</h2>
-  <p>The remaining work turns a local project into a public demo with a live URL and a video. Each step depends on the one before it.</p>
-  <ol>
-    <li><strong>Complete the 18-month evaluation:</strong> local 7B model on both packs, three seeds, then rebuild the evaluation report.</li>
-    <li><strong>Re-record showcase runs</strong> on the new data, including the monsoon and Sanand questions, so visitors can replay investigations without spending model quota.</li>
-    <li><strong>Public deployment:</strong> HTTPS, production settings, a cloud model protected by the rate limits, and chosen showcase runs shipped with it.</li>
-    <li><strong>GitHub sign-in</strong> for visitors, defaulting to the read-only viewer role.</li>
-    <li><strong>Re-run the cloud models</strong> on the 18-month data, paced for free-tier limits.</li>
-    <li><strong>Demo video</strong> (about 4½ minutes) recorded against the live URL.</li>
+  <p>The remaining work turns the live demo into a finished showpiece.</p>
+  <ol style="list-style:none;padding-left:0">
+    <li><span class="badge open">Open</span><strong>Complete the 18-month evaluation:</strong> local 7B model on both packs, three seeds, then rebuild the evaluation report.</li>
+    <li><span class="badge">Done</span><strong>Re-record showcase runs</strong> on the new data, so visitors can replay investigations without spending model quota.</li>
+    <li><span class="badge">Done</span><strong>Public deployment:</strong> HTTPS, production settings, a cloud model protected by the rate limits, and showcase runs shipped with it.</li>
+    <li><span class="badge">Done</span><strong>GitHub sign-in</strong> for visitors, with read-only access by default.</li>
+    <li><span class="badge open">Open</span><strong>Re-run the cloud models</strong> on the 18-month data, paced for free-tier limits.</li>
+    <li><span class="badge open">Open</span><strong>Demo video</strong> (about 4½ minutes) recorded against the live URL.</li>
   </ol>
   <p class="note">Deliberately out of scope: multi-tenancy, Kubernetes, streaming platforms, a third process pack.</p>
 </section>
@@ -433,7 +488,7 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
 </main>
 
 <footer>
-  Intelligence WatchDog · a portfolio project by Aqueel. All companies, people and data in the scenarios are fictional.
+  Intelligence WatchDog · a portfolio project by Aqueel · <a href="https://intelligence-watchdog.duckdns.org/" target="_blank" rel="noopener">Live demo</a>. All companies, people and data in the scenarios are fictional.
 </footer>
 </div>
 
