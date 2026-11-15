@@ -272,34 +272,34 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
 
 <section id="results">
   <h2>Results</h2>
-  <div class="callout"><p>On the six-month datasets, every completed investigation found every planted cause and no run accepted a decoy, across one local and three cloud models. On the 18-month data, the first five runs (insurance questions, seed 42) did the same.</p></div>
-  <h3>Insurance claims · six-month data, 3 seeds × 3 questions per model</h3>
+  <div class="callout"><p>On the 18-month data, every investigation found every planted cause and no run accepted a decoy: 72 of 72 runs, across one local and three cloud models and both processes.</p></div>
+  <h3>Insurance claims · 18-month data, 3 seeds × 5 questions per model</h3>
   <div class="table-scroll"><table>
     <thead><tr><th>Model</th><th>Completed</th><th>Recall of planted causes</th><th>Decoys accepted</th><th>Model's own citation accuracy</th></tr></thead>
     <tbody>
-      <tr><td>ollama:qwen2.5:7b (local, free)</td><td class="num">9/9</td><td>100%</td><td class="num">0</td><td class="num">75%</td></tr>
-      <tr><td>groq:openai/gpt-oss-120b</td><td class="num">9/9</td><td>100% (79% before the D37 fix)</td><td class="num">0</td><td class="num">73%</td></tr>
-      <tr><td>groq:openai/gpt-oss-20b</td><td class="num">8/9</td><td>100%</td><td class="num">0</td><td class="num">69%</td></tr>
-      <tr><td>groq:qwen/qwen3.8-27b</td><td class="num">4/9</td><td>100%</td><td class="num">0</td><td class="num">97%</td></tr>
+      <tr><td>ollama:qwen2.5:7b (local, free)</td><td class="num">15/15</td><td>100%</td><td class="num">0</td><td class="num">78%</td></tr>
+      <tr><td>groq:openai/gpt-oss-120b</td><td class="num">15/15</td><td>100%</td><td class="num">0</td><td class="num">64%</td></tr>
+      <tr><td>groq:openai/gpt-oss-20b</td><td class="num">15/15</td><td>100%</td><td class="num">0</td><td class="num">73%</td></tr>
+      <tr><td>groq:qwen/qwen3.8-27b</td><td class="num">15/15</td><td>100%</td><td class="num">0</td><td class="num">98%</td></tr>
     </tbody>
   </table></div>
-  <p class="note">Incomplete runs were refused by Groq's free tier (quota or per-minute size cap), not model failures, and are reported separately.</p>
-  <p><strong>Procure-to-pay</strong> (six-month data, local 7B, 9 investigations): 100% recall, 0 decoys, remedy recommended for 17 of 18 causes, policy answers grounded 100%, retrieval hit@5 100%.</p>
+  <p class="note">Groq's free tier allows about ten investigations per model per day, so the cloud runs went through a resumable campaign that waits out the daily quota instead of losing runs to it. On the earlier six-month data, gpt-oss-120b's over-caution had cost it 21 points of recall before the D37 fix.</p>
+  <p><strong>Procure-to-pay</strong> (18-month data, local 7B, 12 investigations): 100% recall, 0 decoys, remedy recommended for 23 of 24 causes, policy answers grounded 100%, retrieval hit@5 100%. The three cloud models are running on this pack now; their results follow when the campaign finishes.</p>
   <h3>Other evidence</h3>
   <ul>
-    <li>Policy Q&amp;A: 96% to 100% of answers cite a relevant passage; citations are re-checked by a cross-encoder, not trusted.</li>
+    <li>Policy Q&amp;A: 95% to 100% of answers cite a relevant passage; citations are re-checked by a cross-encoder, not trusted. Every model declined 5 of 5 unanswerable questions.</li>
     <li>Retrieval on the larger 18-month corpus (hybrid search): the right passage is in the top five for 97% (insurance) and 100% (procure-to-pay) of benchmark questions.</li>
-    <li>What-if estimates land at 0.5 to 0.99 of the exact counterfactual. The engine tends to understate, which is the safe direction.</li>
-    <li>Unverified numbers in executive summaries: 0 across all completed runs.</li>
-    <li>In one procure-to-pay evaluation the model called a confounded segment "supported" 25 times; the confounder rule refuted every one, so none reached the summary.</li>
+    <li>What-if estimates land at 0.55 to 1.17 of the exact counterfactual. The engine mostly understates, the safe direction; three procure-to-pay actions overstate, by 4% to 17%.</li>
+    <li>Unverified numbers in executive summaries: 4 across 72 runs (two models, insurance), each flagged in the UI.</li>
+    <li>In procure-to-pay the local model called a confounded or small-sample effect "supported" 48 times across 12 runs; the safeguards downgraded every one, so none was reported as a cause.</li>
   </ul>
   <h3>Limitations</h3>
   <ul>
     <li>The data is synthetic and the policies author-written. The results show the system recovers planted patterns and resists planted decoys, not that it would on a messy real event log.</li>
-    <li>Samples are small (three seeds, three to five questions per pack and model).</li>
+    <li>Samples are small (three seeds, four to five questions per pack and model).</li>
     <li>Number verification checks numbers, not claims: a small model can attach a correct number to the wrong statement.</li>
-    <li>The what-if engine understates some effects (calendar effects, mechanisms beyond waiting time).</li>
-    <li>The full evaluation on the 18-month data, with five causes per pack, is not yet complete; the results above are mainly from the six-month data.</li>
+    <li>The what-if engine understates some effects (calendar effects, mechanisms beyond waiting time). The Saturday rota is valued at 0.55 of its true benefit, so it shows as not paying back, yet most insurance runs still recommend it.</li>
+    <li>The cloud models' procure-to-pay runs are still in progress; that pack's results above are from the local model only.</li>
   </ul>
 </section>
 
@@ -463,11 +463,11 @@ footer{margin:4rem 0 0;padding:2rem 0 3rem;border-top:1px solid var(--line);font
   <h2>Roadmap</h2>
   <p>The remaining work turns the live demo into a finished showpiece.</p>
   <ol style="list-style:none;padding-left:0">
-    <li><span class="badge open">Open</span><strong>Complete the 18-month evaluation:</strong> local 7B model on both packs, three seeds, then rebuild the evaluation report.</li>
+    <li><span class="badge">Done</span><strong>Complete the 18-month evaluation:</strong> local 7B model on both packs, three seeds, then rebuild the evaluation report.</li>
     <li><span class="badge">Done</span><strong>Re-record showcase runs</strong> on the new data, so visitors can replay investigations without spending model quota.</li>
     <li><span class="badge">Done</span><strong>Public deployment:</strong> HTTPS, production settings, a cloud model protected by the rate limits, and showcase runs shipped with it.</li>
     <li><span class="badge">Done</span><strong>GitHub sign-in</strong> for visitors, with read-only access by default.</li>
-    <li><span class="badge open">Open</span><strong>Re-run the cloud models</strong> on the 18-month data, paced for free-tier limits.</li>
+    <li><span class="badge open">Open</span><strong>Re-run the cloud models</strong> on the 18-month data, paced for free-tier limits. Insurance is done (45 of 45 runs); procure-to-pay is running.</li>
     <li><span class="badge open">Open</span><strong>Demo video</strong> (about 4½ minutes) recorded against the live URL.</li>
   </ol>
   <p class="note">Deliberately out of scope: multi-tenancy, Kubernetes, streaming platforms, a third process pack.</p>
